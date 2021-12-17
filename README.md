@@ -27,3 +27,16 @@ v, _, _ := g.Do("key", func() (string, error) {
 })
 useString(v)
 ```
+
+Diff:
+
+```diff
+- var g Group
++ var g Group[string]
+- v, _, _ := g.Do("key", func() (interface{}, error) {
++ v, _, _ := g.Do("key", func() (string, error) {
+    return "bar", nil
+})
+- useString(v.(string))
++ useString(v)
+```
