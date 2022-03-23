@@ -21,7 +21,7 @@ useString(v.(string))
 you can now just write
 
 ```golang
-var g Group[string]
+var g Group[string, string]
 v, _, _ := g.Do("key", func() (string, error) {
     return "bar", nil
 })
@@ -32,7 +32,7 @@ Diff:
 
 ```diff
 - var g Group
-+ var g Group[string]
++ var g Group[string, string]
 - v, _, _ := g.Do("key", func() (interface{}, error) {
 + v, _, _ := g.Do("key", func() (string, error) {
     return "bar", nil
