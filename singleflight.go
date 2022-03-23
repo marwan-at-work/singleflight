@@ -65,9 +65,9 @@ type call[T any] struct {
 
 // Group represents a class of work and forms a namespace in
 // which units of work can be executed with duplicate suppression.
-type Group[T any] struct {
-	mu sync.Mutex          // protects m
-	m  map[string]*call[T] // lazily initialized
+type Group[Key comparable, T any] struct {
+	mu sync.Mutex       // protects m
+	m  map[Key]*call[T] // lazily initialized
 }
 
 // Result holds the results of Do, so they can be passed
@@ -83,10 +83,10 @@ type Result[T any] struct {
 // time. If a duplicate comes in, the duplicate caller waits for the
 // original to complete and receives the same results.
 // The return value shared indicates whether v was given to multiple callers.
-func (g *Group[T]) Do(key string, fn func() (T, error)) (v T, err error, shared bool) {
+func (g *Group[Key, T]) Do(key Key, fn func() (T, error)) (v T, err error, shared bool) {
 	g.mu.Lock()
 	if g.m == nil {
-		g.m = make(map[string]*call[T])
+		g.m = make(map[Key]*call[T])
 	}
 	if c, ok := g.m[key]; ok {
 		c.dups++
@@ -113,11 +113,11 @@ func (g *Group[T]) Do(key string, fn func() (T, error)) (v T, err error, shared 
 // results when they are ready.
 //
 // The returned channel will not be closed.
-func (g *Group[T]) DoChan(key string, fn func() (T, error)) <-chan Result[T] {
+func (g *Group[Key, T]) DoChan(key Key, fn func() (T, error)) <-chan Result[T] {
 	ch := make(chan Result[T], 1)
 	g.mu.Lock()
 	if g.m == nil {
-		g.m = make(map[string]*call[T])
+		g.m = make(map[Key]*call[T])
 	}
 	if c, ok := g.m[key]; ok {
 		c.dups++
@@ -136,7 +136,7 @@ func (g *Group[T]) DoChan(key string, fn func() (T, error)) <-chan Result[T] {
 }
 
 // doCall handles the single call for a key.
-func (g *Group[T]) doCall(c *call[T], key string, fn func() (T, error)) {
+func (g *Group[Key, T]) doCall(c *call[T], key Key, fn func() (T, error)) {
 	normalReturn := false
 	recovered := false
 
@@ -202,7 +202,7 @@ func (g *Group[T]) doCall(c *call[T], key string, fn func() (T, error)) {
 // Forget tells the singleflight to forget about a key.  Future calls
 // to Do for this key will call the function rather than waiting for
 // an earlier call to complete.
-func (g *Group[T]) Forget(key string) {
+func (g *Group[Key, T]) Forget(key Key) {
 	g.mu.Lock()
 	if c, ok := g.m[key]; ok {
 		c.forgotten = true

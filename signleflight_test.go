@@ -20,7 +20,7 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	var g Group[string]
+	var g Group[string, string]
 	v, err, _ := g.Do("key", func() (string, error) {
 		return "bar", nil
 	})
@@ -33,7 +33,7 @@ func TestDo(t *testing.T) {
 }
 
 func TestDoErr(t *testing.T) {
-	var g Group[any]
+	var g Group[string, any]
 	someErr := errors.New("Some error")
 	v, err, _ := g.Do("key", func() (any, error) {
 		return nil, someErr
@@ -47,7 +47,7 @@ func TestDoErr(t *testing.T) {
 }
 
 func TestDoDupSuppress(t *testing.T) {
-	var g Group[string]
+	var g Group[string, string]
 	var wg1, wg2 sync.WaitGroup
 	c := make(chan string, 1)
 	var calls int32
@@ -95,7 +95,7 @@ func TestDoDupSuppress(t *testing.T) {
 // Test that singleflight behaves correctly after Forget called.
 // See https://github.com/golang/go/issues/31420
 func TestForget(t *testing.T) {
-	var g Group[any]
+	var g Group[string, any]
 
 	var (
 		firstStarted  = make(chan struct{})
@@ -136,7 +136,7 @@ func TestForget(t *testing.T) {
 }
 
 func TestDoChan(t *testing.T) {
-	var g Group[string]
+	var g Group[string, string]
 	ch := g.DoChan("key", func() (string, error) {
 		return "bar", nil
 	})
@@ -155,7 +155,7 @@ func TestDoChan(t *testing.T) {
 // Test singleflight behaves correctly after Do panic.
 // See https://github.com/golang/go/issues/41133
 func TestPanicDo(t *testing.T) {
-	var g Group[any]
+	var g Group[string, any]
 	fn := func() (any, error) {
 		panic("invalid memory address or nil pointer dereference")
 	}
@@ -192,7 +192,7 @@ func TestPanicDo(t *testing.T) {
 }
 
 func TestGoexitDo(t *testing.T) {
-	var g Group[any]
+	var g Group[string, any]
 	fn := func() (any, error) {
 		runtime.Goexit()
 		return nil, nil
@@ -233,7 +233,7 @@ func TestPanicDoChan(t *testing.T) {
 			recover()
 		}()
 
-		g := new(Group[any])
+		g := new(Group[string, any])
 		ch := g.DoChan("", func() (any, error) {
 			panic("Panicking in DoChan")
 		})
@@ -274,7 +274,7 @@ func TestPanicDoSharedByDoChan(t *testing.T) {
 		blocked := make(chan struct{})
 		unblock := make(chan struct{})
 
-		g := new(Group[any])
+		g := new(Group[string, any])
 		go func() {
 			defer func() {
 				recover()
